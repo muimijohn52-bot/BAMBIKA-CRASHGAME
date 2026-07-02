@@ -1,1 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BAMBIKA Crash — Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b1020; --card:#0f1724; --accent:#ff7a59; --accent-2:#ffd166; --muted:#9aa4b2;
+      --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{margin:0;background:
+      radial-gradient(1200px 800px at 10% 10%, rgba(255,122,89,0.06), transparent 10%),
+      radial-gradient(900px 600px at 90% 90%, rgba(255,209,102,0.03), transparent 10%),
+      var(--bg); color:#e6eef6; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+    .wrap{width:980px; max-width:98%; display:grid; grid-template-columns:1fr 360px; gap:20px}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:18px; box-shadow:0 6px 30px rgba(3,8,20,0.6)}
+    header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+    header h1{font-size:18px;margin:0;color:var(--accent-2)}
+    .muted{color:var(--muted); font-size:13px}
+    /* Game area */
+    .game{display:flex; flex-direction:column; gap:12px; height:520px}
+    .stage{flex:1; background:linear-gradient(180deg,#071026 0%, #07101a 100%); border-radius:8px; padding:14px; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center}
+    .multiplier{font-weight:800; font-size:54px; color:var(--accent); text-shadow:0 6px 24px rgba(255,122,89,0.12)}
+    .status{position:absolute; top:14px; left:14px; font-weight:600; color:var(--muted)}
+    .crash-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:#ffccd5; text-shadow:0 4px 30px rgba(0,0,0,0.7); pointer-events:none}
+    .rocket{position:absolute; left:50%; transform:translateX(-50%); bottom:18px; width:48px; transition:transform 0.12s linear}
+    .rocket img{width:100%}
+    .track{position:absolute; left:10px; right:10px; bottom:0; height:6px; background:linear-gradient(90deg,#071a30,#07101a); border-radius:999px; overflow:hidden}
+    .progress{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width 0.06s linear}
+    /* Controls */
+    .controls{display:flex; gap:12px; flex-direction:column}
+    .card{background:var(--card); border-radius:10px; padding:12px}
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    input[type="number"], input[type="text"], input[type="password"], select{width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit}
+    .row{display:flex; gap:8px}
+    button{cursor:pointer; border:0; padding:9px 12px; border-radius:8px; font-weight:700; color:#07101a}
+    .btn-accent{background:var(--accent); color:#07101a}
+    .btn-ghost{background:transparent; color:var(--accent-2); border:1px solid rgba(255,209,102,0.08)}
+    .small{font-size:13px; padding:6px 8px}
+    .balance{font-size:18px; font-weight:800; color:var(--accent-2)}
+    .muted-block{font-size:13px; color:var(--muted)}
+    .log{height:92px; overflow:auto; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; font-size:13px}
+    footer{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px}
+    /* Modal (signup/login) */
+    .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000}
+    .modal{width:420px; max-width:94%; background:linear-gradient(180deg, #0f1724,#07121a); padding:18px; border-radius:12px}
+    .tabs{display:flex; gap:6px; margin-bottom:12px}
+    .tabs button{flex:1}
+    /* responsive */
+    @media (max-width:900px){ .wrap{grid-template-columns:1fr} .game{height:420px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel game">
+      <header>
+        <h1>BAMBIKA Crash — ajimayion demo</h1>
+        <div class="muted">Fast, simple, local demo</div>
+      </header>
 
+      <div class="stage" id="stage">
+        <div class="status" id="roundStatus">Waiting for bets</div>
+        <div class="multiplier" id="multiplier">x1.00</div>
+
+        <div class="crash-banner" id="crashBanner" style="display:none">CRASHED</div>
+
+        <div class="rocket" id="rocket" aria-hidden="true">
+          <!-- little rocket SVG -->
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23ff7a59'/><stop offset='1' stop-color='%23ffd166'/></linearGradient></defs><path fill='%23ff7a59' d='M32 2c6 0 12 3 12 9 0 7-12 21-12 21s-12-14-12-21C20 5 26 2 32 2z'/><circle cx='32' cy='15' r='4' fill='%23101822'/></svg>" alt="rocket"/>
+        </div>
+
+        <div class="track" aria-hidden="true">
+          <div class="progress" id="progress"></div>
+        </div>
+
+      </div>
+
+      <div class="controls">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="muted-block">Player</div>
+              <div id="playerName" class="balance">Guest</div>
+            </div>
+            <div style="text-align:right">
+              <div class="muted-block">Balance</div>
+              <div id="balance" class="balance">1000</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <label>Bet amount</label>
+          <div class="row">
+            <input id="betAmt" type="number" min="1" step="1" value="10" />
+            <button id="allBtn" class="small btn-ghost">ALL</button>
+            <button id="halfBtn" class="small btn-ghost">1/2</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <div style="flex:1">
+              <label>Auto cashout (x)</label>
+              <input id="autoCash" type="number" min="1" step="0.1" value="2.0" />
+            </div>
+            <div style="width:120px">
+              <label>&nbsp;</label>
+              <button id="placeBetBtn" class="btn-accent" style="width:100%">Place Bet</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+            <div>
+              <label>Round controls</label>
+              <div class="muted-block">Countdown → Run → Crash</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button id="startRoundBtn" class="btn-ghost">Start Round</button>
+              <button id="cashoutBtn" class="btn-accent" disabled>Cashout</button>
+            </div>
+          </div>
+          <div style="margin-top:8px" class="muted-block">Round log</div>
+          <div class="log" id="log"></div>
+        </div>
+
+        <footer>
+          <div style="display:flex;gap:8px">
+            <button id="openAuth" class="btn-ghost small">Sign up / Login</button>
+            <button id="logoutBtn" class="small" style="display:none">Logout</button>
+          </div>
+          <div class="muted-block">Demo — local only, not real money</div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Right column: account + leaderboard -->
+    <aside class="panel card">
+      <h3 style="margin-top:0">Account</h3>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+        <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#07101a">B</div>
+        <div>
+          <div id="acctName" class="balance">Guest</div>
+          <div class="muted">Local demo account</div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <label>Quick deposit (demo)</label>
+        <div class="row">
+          <input id="quickAmt" type="number" min="1" step="1" value="100" />
+          <button id="depositBtn" class="btn-accent">Deposit</button>
+        </div>
+      </div>
+
+      <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:14px 0;border-radius:2px" />
+
+      <h4 style="margin:6px 0">Leaderboard (local)</h4>
+      <div id="leaderboard" class="muted-block">No players yet</div>
+    </aside>
+  </div>
+
+  <!-- Modal: signup/login -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Sign up / Login</h3>
+        <button id="closeModal" class="btn-ghost small">Close</button>
+      </div>
+      <div class="tabs" role="tablist" aria-label="auth tabs" style="margin-top:12px">
+        <button id="tabLogin" class="small btn-ghost">Login</button>
+        <button id="tabSignup" class="small btn-ghost">Sign up</button>
+      </div>
+
+      <div id="loginForm" style="display:block">
+        <label>Username</label>
+        <input id="loginUser" type="text" />
+        <label>Password</label>
+        <input id="loginPass" type="password" />
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="doLogin" class="btn-accent">Login</button>
+          <button id="toSignup" class="btn-ghost">Switch</button>
+        </div>
+      </div>
+
+      <div id="signupForm" style="display:none">
+        <label>Choose a username</label>
+        <input id="signupUser" type="text" />
+        <label>Choose a password</label>
+        <input id="signupPass" type="password" />
+        <label>Starting balance (demo)</label>
+        <input id="signupBal" type="number" value="1000" min="0" />
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="doSignup" class="btn-accent">Create account</button>
+          <button id="toLogin" class="btn-ghost">Switch</button>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:12px">Accounts saved only in your browser (localStorage). This is a demo. The word "ajimayion" = animation easter egg 🪄</p>
+    </div>
+  </div>
+
+  <script>
+    // Simple localStorage-based user store (demo only)
+    const store = {
+      getUsers(){ return JSON.parse(localStorage.getItem('demo_users')||'{}') },
+      saveUsers(u){ localStorage.setItem('demo_users', JSON.stringify(u)) },
+      getCurrent(){ return localStorage.getItem('demo_current') || null },
+      setCurrent(name){ if(name) localStorage.setItem('demo_current', name); else localStorage.removeItem('demo_current') },
+      getBalance(name){
+        const u = this.getUsers();
+        return u[name] && typeof u[name].bal === 'number' ? u[name].bal : 0;
+      },
+      setBalance(name,bal){
+        const u = this.getUsers();
+        if(!u[name]) u[name] = {pass:'', bal:0};
+        u[name].bal = bal;
+        this.saveUsers(u);
+      },
+      addUser(name,pass,bal=1000){
+        const u = this.getUsers();
+        if(u[name]) return false;
+        u[name] = {pass, bal};
+        this.saveUsers(u); return true;
+      },
+      checkUser(name,pass){
+        const u = this.getUsers();
+        return u[name] && u[name].pass === pass;
+      },
+      getLeaderboard(){
+        const u = this.getUsers();
+        return Object.keys(u).map(n => ({n,bal:u[n].bal})).sort((a,b)=>b.bal-a.bal);
+      }
+    };
+
+    // UI refs
+    const modal = document.getElementById('modal');
+    const openAuth = document.getElementById('openAuth');
+    const closeModal = document.getElementById('closeModal');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabSignup = document.getElementById('tabSignup');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const doLogin = document.getElementById('doLogin');
+    const doSignup = document.getElementById('doSignup');
+    const toSignup = document.getElementById('toSignup');
+    const toLogin = document.getElementById('toLogin');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const playerNameEl = document.getElementById('playerName');
+    const acctNameEl = document.getElementById('acctName');
+    const balanceEl = document.getElementById('balance');
+    const leaderboardEl = document.getElementById('leaderboard');
+
+    // Game refs
+    const betAmtEl = document.getElementById('betAmt');
+    const autoCashEl = document.getElementById('autoCash');
+    const placeBetBtn = document.getElementById('placeBetBtn');
+    const startRoundBtn = document.getElementById('startRoundBtn');
+    const allBtn = document.getElementById('allBtn');
+    const halfBtn = document.getElementById('halfBtn');
+    const quickAmt = document.getElementById('quickAmt');
+    const depositBtn = document.getElementById('depositBtn');
+    const logEl = document.getElementById('log');
+    const cashoutBtn = document.getElementById('cashoutBtn');
+    const multiplierEl = document.getElementById('multiplier');
+    const progressEl = document.getElementById('progress');
+    const rocketEl = document.getElementById('rocket');
+    const roundStatusEl = document.getElementById('roundStatus');
+    const crashBanner = document.getElementById('crashBanner');
+
+    // State
+    let state = {
+      currentUser: store.getCurrent(),
+      balance: 1000,
+      currentBet: 0,
+      roundRunning:false,
+      crashed:false,
+      startTime: 0,
+      crashAt: 0,
+      cashoutAt: null,
+      won:false
+    };
+
+    // Initialize
+    function init(){
+      if(state.currentUser){
+        const name = state.currentUser;
+        playerNameEl.textContent = name;
+        acctNameEl.textContent = name;
+        logoutBtn.style.display = 'inline-block';
+        state.balance = store.getBalance(name);
+      } else {
+        playerNameEl.textContent = 'Guest';
+        acctNameEl.textContent = 'Guest';
+        logoutBtn.style.display = 'none';
+        state.balance = 1000;
+      }
+      balanceEl.textContent = state.balance;
+      renderLeaderboard();
+    }
+    init();
+
+    // Auth modal handlers
+    openAuth.onclick = ()=>{ modal.style.display='flex'; }
+    closeModal.onclick = ()=>{ modal.style.display='none'; }
+    tabLogin.onclick = ()=>{ loginForm.style.display='block'; signupForm.style.display='none'; }
+    tabSignup.onclick = ()=>{ loginForm.style.display='none'; signupForm.style.display='block'; }
+    toSignup.onclick = ()=>{ tabSignup.click(); }
+    toLogin.onclick = ()=>{ tabLogin.click(); }
+
+    doSignup.onclick = ()=>{
+      const u = document.getElementById('signupUser').value.trim();
+      const p = document.getElementById('signupPass').value;
+      const bal = Math.max(0, Number(document.getElementById('signupBal').value) || 0);
+      if(!u || !p){ alert('username and password required'); return; }
+      if(store.addUser(u,p,bal)){
+        store.setCurrent(u);
+        state.currentUser = u;
+        state.balance = bal;
+        modal.style.display='none';
+        updateAccountUI();
+        log(`Account "${u}" created (local demo)`);
+      } else alert('username already taken');
+    };
+
+    doLogin.onclick = ()=>{
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+      if(!u || !p){ alert('username and password required'); return; }
+      if(store.checkUser(u,p)){
+        store.setCurrent(u);
+        state.currentUser = u;
+        state.balance = store.getBalance(u);
+        modal.style.display='none';
+        updateAccountUI();
+        log(`Logged in as ${u}`);
+      } else alert('invalid credentials');
+    };
+
+    logoutBtn.onclick = ()=>{
+      store.setCurrent(null);
+      state.currentUser = null;
+      state.balance = 1000;
+      updateAccountUI();
+      log('Logged out');
+    };
+
+    function updateAccountUI(){
+      const name = state.currentUser || 'Guest';
+      playerNameEl.textContent = name;
+      acctNameEl.textContent = name;
+      balanceEl.textContent = state.balance;
+      if(state.currentUser) logoutBtn.style.display='inline-block'; else logoutBtn.style.display='none';
+      renderLeaderboard();
+    }
+
+    depositBtn.onclick = ()=>{
+      const amt = Math.max(1, Number(quickAmt.value) || 0);
+      state.balance = Math.round((state.balance + amt) * 100) / 100;
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+      updateAccountUI();
+      log(`Deposited ${amt} demo`);
+    };
+
+    function renderLeaderboard(){
+      const data = store.getLeaderboard();
+      if(data.length===0){ leaderboardEl.textContent = 'No players yet'; return; }
+      leaderboardEl.innerHTML = data.slice(0,8).map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02)"><div>${d.n}</div><div>${d.bal}</div></div>`).join('');
+    }
+
+    function log(msg){
+      const t = new Date().toLocaleTimeString();
+      logEl.innerHTML = `<div style="padding:4px 0"><strong class="muted">${t}</strong> — ${msg}</div>` + logEl.innerHTML;
+    }
+
+    // Quick bet helpers
+    allBtn.onclick = ()=>{
+      betAmtEl.value = Math.max(1, Math.floor(state.balance));
+    };
+    halfBtn.onclick = ()=>{
+      betAmtEl.value = Math.max(1, Math.floor(state.balance/2));
+    };
+
+    // Place bet
+    placeBetBtn.onclick = ()=>{
+      if(state.roundRunning){ alert('Round is already running'); return; }
+      const bet = Math.max(1, Math.floor(Number(betAmtEl.value) || 0));
+      if(bet <=0){ alert('enter a bet'); return; }
+      if(bet > state.balance){ alert('insufficient balance'); return; }
+      state.currentBet = bet;
+      state.balance = Math.round((state.balance - bet) * 100) / 100;
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+      updateAccountUI();
+      log(`Placed bet ${bet}`);
+    };
+
+    // Round engine: start and run
+    startRoundBtn.onclick = ()=> startRound();
+    function startRound(){
+      if(state.roundRunning){ alert('Round already running'); return; }
+      // If no placed bet, allow spectator round but you can still start
+      state.crashed = false;
+      state.roundRunning = true;
+      state.cashoutAt = null;
+      state.won = false;
+      crashBanner.style.display='none';
+      progressEl.style.width = '0%';
+      rocketEl.style.bottom = '18px';
+      multiplierEl.textContent = 'x1.00';
+      roundStatusEl.textContent = state.currentBet ? 'Running — you have a bet' : 'Running (no bet)';
+      // Generate crash point (demo fairness: heavy tail with occasional big wins)
+      const r = Math.random();
+      let crash;
+      if(r > 0.985) crash = +(Math.exp(Math.random()*4.5)).toFixed(2); // rare huge
+      else crash = +(Math.exp(Math.random()*1.6)).toFixed(2); // typical range 1.0 - ~5
+      if(crash < 1.05) crash = +(1.05 + Math.random()*0.4).toFixed(2);
+      state.crashAt = crash;
+      log(`Round started — crash at x${state.crashAt} (server-demo)`);
+      // Countdown
+      let cd = 3;
+      roundStatusEl.textContent = `Round starting in ${cd}...`;
+      const cdInterval = setInterval(()=>{
+        cd--;
+        if(cd>0) roundStatusEl.textContent = `Round starting in ${cd}...`;
+        else {
+          clearInterval(cdInterval);
+          runRoundLoop();
+        }
+      }, 800);
+    }
+
+    // Animation / multiplier loop
+    let rafId = null;
+    function runRoundLoop(){
+      state.startTime = performance.now();
+      const durationCap = 60*1000; // safety cap
+      // multiplier grows roughly exponentially for "excitement"
+      function frame(now){
+        const t = (now - state.startTime) / 1000; // seconds
+        // tune growth:  multiplier = 1 + 0.5 * (e^(t * 0.9) - 1)
+        const mult = Math.min(9999, 1 + (Math.exp(t * 0.8) - 1) * 0.65);
+        const m = +(mult.toFixed(2));
+        multiplierEl.textContent = 'x' + m.toFixed(2);
+
+        // progress bar and rocket position (cosmetic, not exact mapping to multiplier)
+        const progress = Math.min(98, Math.log(m + 1) / Math.log(1 + state.crashAt) * 100);
+        progressEl.style.width = progress + '%';
+        rocketEl.style.transform = `translateX(-50%) translateY(-${Math.min(220, progress)}px)`;
+
+        // "ajimayion" flicker effect every few frames
+        if(Math.floor(now/250) % 2 === 0) multiplierEl.style.letterSpacing = '0.6px'; else multiplierEl.style.letterSpacing = '1.6px';
+
+        // Auto cashout
+        const autoTarget = parseFloat(autoCashEl.value) || null;
+        if(state.currentBet && autoTarget && !state.cashoutAt && m >= autoTarget){
+          doCashout(m, 'auto');
+        }
+
+        // If we've passed crash point -> crash
+        if(m >= state.crashAt){
+          // crash occurs
+          doCrash();
+          return;
+        }
+
+        // safety - if too long, end simulation
+        if(now - state.startTime > durationCap){
+          doCrash();
+          return;
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+      rafId = requestAnimationFrame(frame);
+      // enable manual cashout
+      cashoutBtn.disabled = false;
+      cashoutBtn.onclick = ()=> {
+        const displayed = parseFloat(multiplierEl.textContent.replace('x','')) || 1.0;
+        doCashout(displayed, 'manual');
+      };
+    }
+
+    function doCashout(m, how){
+      if(!state.roundRunning || state.crashed) return;
+      if(!state.currentBet){ log('No bet to cashout'); return; }
+      state.cashoutAt = m;
+      state.won = true;
+      // winnings are bet * multiplier (returns full including stake)
+      const payout = Math.round((state.currentBet * m) * 100) / 100;
+      state.balance = Math.round((state.balance + payout) * 100) / 100;
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+      updateAccountUI();
+      log(`CASHOUT ${how} at x${m.toFixed(2)} — Payout: ${payout}`);
+      // finalize round: stop animation and mark as ended
+      finalizeRound(true, m);
+    }
+
+    function doCrash(){
+      if(!state.roundRunning) return;
+      state.crashed = true;
+      state.roundRunning = false;
+      // cancel RAF
+      if(rafId) cancelAnimationFrame(rafId);
+      // if player hasn't cashed out, they lose the bet
+      if(state.currentBet && !state.won){
+        log(`Round crashed at x${state.crashAt} — You lost ${state.currentBet}`);
+      } else {
+        log(`Round crashed at x${state.crashAt}`);
+      }
+      crashBanner.style.display = 'flex';
+      multiplierEl.textContent = 'x'+state.crashAt.toFixed(2);
+      // visual final burst
+      progressEl.style.width = '100%';
+      rocketEl.style.transform = 'translateX(-50%) translateY(-260px) rotate(12deg)';
+      roundStatusEl.textContent = 'Crashed';
+      cashoutBtn.disabled = true;
+      // clear current bet
+      state.currentBet = 0;
+      // save leaderboard if user
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+      renderLeaderboard();
+      // after 3s reset
+      setTimeout(()=>{ resetRoundUI(); }, 2800);
+    }
+
+    function finalizeRound(playerWon, m){
+      // stop RAF
+      if(rafId) cancelAnimationFrame(rafId);
+      state.roundRunning = false;
+      state.crashed = true;
+      crashBanner.style.display = 'none';
+      roundStatusEl.textContent = 'Cashed out';
+      // little celebratory effect on multiplier
+      multiplierEl.style.color = playerWon ? '#a6ffcb' : 'var(--accent)';
+      progressEl.style.width = '100%';
+      rocketEl.style.transform = 'translateX(-50%) translateY(-260px) rotate(-6deg)';
+      cashoutBtn.disabled = true;
+      // clear current bet and mark scoreboard
+      state.currentBet = 0;
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+      renderLeaderboard();
+      setTimeout(()=>{ multiplierEl.style.color = 'var(--accent)'; resetRoundUI(); }, 2000);
+    }
+
+    function resetRoundUI(){
+      crashBanner.style.display='none';
+      progressEl.style.width='0%';
+      rocketEl.style.transform='translateX(-50%)';
+      roundStatusEl.textContent = 'Waiting for bets';
+      multiplierEl.textContent = 'x1.00';
+      cashoutBtn.disabled = true;
+      state.crashed = false;
+      state.roundRunning = false;
+      state.currentBet = 0;
+      state.won = false;
+    }
+
+    // Ensure leaderboard and balances kept if user leaves
+    window.addEventListener('beforeunload', ()=>{
+      if(state.currentUser) store.setBalance(state.currentUser, state.balance);
+    });
+
+    // Seed: add a sample user if none exist
+    (function seed(){
+      const u = store.getUsers();
+      if(Object.keys(u).length===0){
+        store.addUser('alice','password',1500);
+        store.addUser('bob','password',800);
+        store.addUser('carol','password',2500);
+      }
+      renderLeaderboard();
+    })();
+
+    // Helpful demo tip inserted into log
+    log('Welcome to BAMBIKA Crash demo — try signing up and placing a bet. Tip: type "ajimayion" in the console for a surprise.');
+    // Easter egg: if user enters "ajimayion" into browser console, animate a confetti-style color flash
+    window.ajimayion = () => {
+      document.body.animate([{filter:'hue-rotate(0deg)'},{filter:'hue-rotate(360deg)'}], {duration:1300});
+      log('ajimayion activated ✨');
+    };
+
+  </script>
+</body>
+</html>
