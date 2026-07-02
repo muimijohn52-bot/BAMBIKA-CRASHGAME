@@ -1,1 +1,53 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet - BAMBIKA Crash Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="wallet-container">
+        <header>
+            <h1>Wallet</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="games.html">Games</a></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <section class="wallet-balance">
+                <h2>Your Balance</h2>
+                <p id="walletBalance" class="balance-amount">$0.00</p>
+            </section>
+            <section class="wallet-actions">
+                <h2>Quick Actions</h2>
+                <button class="btn btn-primary">Deposit</button>
+                <button class="btn btn-secondary">Withdraw</button>
+            </section>
+            <section class="transaction-history">
+                <h2>Recent Transactions</h2>
+                <table id="transactions">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionList">
+                        <tr>
+                            <td colspan="4" class="no-data">No transactions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
